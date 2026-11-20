@@ -1,0 +1,13 @@
+ 
+import '../styles/home.scss';
+
+ 
+
+ 
+const LanguageSelector = () => {
+   return null;
+  };
+
+  
+
+export default LanguageSelector;

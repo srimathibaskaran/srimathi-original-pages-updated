@@ -1,0 +1,730 @@
+import {
+  forwardRef,
+  useRef,
+  useMemo,
+  useState,
+  useEffect,
+  useCallback,
+  type ReactNode,
+} from 'react';
+import HTMLFlipBook from 'react-pageflip';
+import { useTranslation, Trans } from 'react-i18next';
+import { useReducedMotion, type Variants } from 'framer-motion';
+import useCanvasAnimationLoop, { type CanvasDrawArgs } from '../../hooks/useCanvasAnimationLoop';
+import {
+  Code,
+  GraduationCap,
+  TrendingUp,
+  Briefcase,
+  ChevronLeft,
+  ChevronRight,
+  Download,
+  Target,
+  User,
+  ArrowDown,
+} from 'lucide-react';
+import { motion } from 'framer-motion';
+import '../../styles/sections/ResumeSection.scss';
+import resumePDF from '../../assets/files/Resume2026.pdf';
+import { scrollToSection } from '../../utils/scrollToSection';
+
+const ResumeStarsCanvas = () => {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const rootRef = useRef<HTMLDivElement>(null);
+  const reduceMotion = useReducedMotion();
+  const stars = useMemo(
+    () =>
+      [...Array(500)].map((_, i) => {
+        const type = Math.random();
+        const starType = type > 0.99 ? 'hero' : type > 0.75 ? 'mid' : 'distant';
+        return {
+          id: i,
+          type: starType,
+          x: Math.random(),
+          y: Math.random(),
+          radius:
+            starType === 'hero'
+              ? Math.random() * 1.1 + 1.4
+              : starType === 'mid'
+                ? Math.random() * 0.3 + 0.45
+                : Math.random() * 0.22 + 0.28,
+          alpha:
+            starType === 'hero'
+              ? Math.random() * 0.4 + 0.6
+              : starType === 'mid'
+                ? Math.random() * 0.18 + 0.45
+                : Math.random() * 0.12 + 0.25,
+          phase: Math.random() * Math.PI * 2,
+          speed: Math.random() * 0.002 + 0.001,
+        };
+      }),
+    [],
+  );
+
+  const drawStars = useCallback(
+    ({ ctx, width, height, timestamp, isStatic }: CanvasDrawArgs) => {
+      ctx.clearRect(0, 0, width, height);
+
+      stars.forEach((star) => {
+        const twinkle =
+          reduceMotion || isStatic
+            ? 1
+            : 0.75 + Math.sin(timestamp * star.speed + star.phase) * 0.14;
+        const alpha = Math.min(1, Math.max(0, star.alpha * twinkle));
+
+        ctx.globalAlpha = alpha;
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.arc(star.x * width, star.y * height, star.radius, 0, Math.PI * 2);
+        ctx.fill();
+
+        if (star.type === 'hero') {
+          ctx.strokeStyle = 'rgba(255,255,255,0.35)';
+          ctx.lineWidth = 1;
+          const x = star.x * width;
+          const y = star.y * height;
+          const ray = 9;
+
+          ctx.beginPath();
+          ctx.moveTo(x - ray, y);
+          ctx.lineTo(x + ray, y);
+          ctx.stroke();
+
+          ctx.beginPath();
+          ctx.moveTo(x, y - ray);
+          ctx.lineTo(x, y + ray);
+          ctx.stroke();
+        }
+      });
+
+      ctx.globalAlpha = 1;
+    },
+    [reduceMotion, stars],
+  );
+
+  useCanvasAnimationLoop(canvasRef, {
+    rootRef,
+    onDraw: drawStars,
+  });
+
+  return (
+    <div ref={rootRef} className="resume-stars-wrapper">
+      <canvas ref={canvasRef} className="resume-stars-canvas" aria-hidden="true" />
+    </div>
+  );
+};
+
+const StarBackground = () => {
+  return (
+    <div className="cosmic-background">
+      <div className="cosmic-noise"></div>
+      <div className="nebula-transition-top"></div>
+      <div className="nebula-layer cloud-1"></div>
+      <div className="nebula-layer cloud-2"></div>
+      <div className="nebula-layer cloud-3"></div>
+      <div className="electric-glow spot-main"></div>
+      <div className="electric-glow spot-core core-1"></div>
+      <div className="electric-glow spot-core core-2"></div>
+      <ResumeStarsCanvas />
+    </div>
+  );
+};
+
+interface PageProps {
+  className?: string;
+  density?: string;
+  number?: string | number;
+  children?: ReactNode;
+}
+
+const Page = forwardRef<HTMLDivElement, PageProps>(function Page(props, ref) {
+  return (
+    <div
+      className={`page ${props.className || ''}`}
+      ref={ref}
+      data-density={props.density || 'soft'}
+    >
+      <div className="page-content">
+        {props.children}
+        <div className="page-footer">{props.number}</div>
+      </div>
+    </div>
+  );
+});
+
+const containerVariants: Variants = {
+  hidden: { opacity: 0, y: 50 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      duration: 0.8,
+      ease: 'easeOut',
+      when: 'beforeChildren',
+      staggerChildren: 0.2,
+    },
+  },
+};
+
+const itemVariants: Variants = {
+  hidden: { opacity: 0, scale: 0.9 },
+  visible: { opacity: 1, scale: 1, transition: { duration: 0.5 } },
+};
+
+const useWindowSize = () => {
+  const [windowSize, setWindowSize] = useState({
+    width: typeof window !== 'undefined' ? window.innerWidth : 0,
+    height: typeof window !== 'undefined' ? window.innerHeight : 0,
+  });
+
+  useEffect(() => {
+    let resizeTimeout: ReturnType<typeof setTimeout> | undefined;
+
+    function handleResize() {
+      clearTimeout(resizeTimeout);
+      resizeTimeout = setTimeout(() => {
+        setWindowSize({
+          width: window.innerWidth,
+          height: window.innerHeight,
+        });
+      }, 100);
+    }
+
+    window.addEventListener('resize', handleResize);
+
+    return () => {
+      clearTimeout(resizeTimeout);
+      window.removeEventListener('resize', handleResize);
+    };
+  }, []);
+
+  return windowSize;
+};
+
+const ResumeSection = ({ id }: { id: string }) => {
+  const bookRef = useRef<HTMLFlipBook>(null);
+  const { width: windowWidth } = useWindowSize();
+  const isMobile = windowWidth < 1050;
+  const [currentPage, setCurrentPage] = useState(0);
+  const [isFlipping, setIsFlipping] = useState(false);
+  const [nextPageDirection, setNextPageDirection] = useState<'next' | 'prev' | null>(null);
+  const [flipStartData, setFlipStartData] = useState<number | null>(null);
+  const totalPages = 8;
+  const { t } = useTranslation();
+
+  // warm the SocialsSection chunk early so it's ready before the user scroll-snaps into it
+  useEffect(() => {
+    import('./SocialsSection');
+  }, []);
+
+  const onFlip = (e: { data: number }) => {
+    setCurrentPage(e.data);
+    setIsFlipping(false);
+    setNextPageDirection(null);
+    setFlipStartData(null);
+  };
+
+  const onFlipStart = (e: { data: number }) => {
+    setIsFlipping(true);
+    setFlipStartData(e.data);
+
+    if (e.data === 0) {
+      setNextPageDirection('next');
+    } else if (e.data === totalPages - 2) {
+      setNextPageDirection('next');
+    } else if (e.data === totalPages - 1) {
+      setNextPageDirection('prev');
+    } else if (e.data === 1 && currentPage === 0) {
+      setNextPageDirection('prev');
+    } else {
+      const direction = e.data > currentPage ? 'next' : 'prev';
+      setNextPageDirection(direction);
+    }
+  };
+
+  const onDownloadCV = () => {
+    window.open(resumePDF, '_blank');
+  };
+
+  const getBookmarkState = () => {
+    if (isMobile) return 'is-mobile-hidden';
+    if (isFlipping && nextPageDirection && flipStartData !== null) {
+      let predictedPage: number;
+
+      if (nextPageDirection === 'next') {
+        predictedPage = flipStartData + 1;
+      } else {
+        predictedPage = flipStartData - 1;
+      }
+
+      predictedPage = Math.max(0, Math.min(totalPages - 1, predictedPage));
+
+      if (predictedPage === 0) return 'is-front';
+      if (predictedPage === totalPages - 1) return 'is-back';
+      return 'is-open';
+    }
+
+    if (currentPage === 0) return 'is-front';
+    if (currentPage === totalPages - 1) return 'is-back';
+    return 'is-open';
+  };
+
+  const getInteractiveState = () => {
+    if (isFlipping && nextPageDirection && flipStartData !== null) {
+      let predictedPage: number;
+
+      if (nextPageDirection === 'next') {
+        predictedPage = flipStartData + 1;
+      } else {
+        predictedPage = flipStartData - 1;
+      }
+
+      predictedPage = Math.max(0, Math.min(totalPages - 1, predictedPage));
+
+      const isPredictedFrontCover = predictedPage === 0;
+      const isPredictedBackCover = predictedPage === totalPages - 1;
+
+      return {
+        isFrontCover: isPredictedFrontCover,
+        isBackCover: isPredictedBackCover,
+      };
+    }
+
+    return {
+      isFrontCover: currentPage === 0,
+      isBackCover: currentPage === totalPages - 1,
+    };
+  };
+
+  const { isFrontCover, isBackCover } = getInteractiveState();
+  const bookmarkState = getBookmarkState();
+
+  const handlePrevClick = (e?: { preventDefault: () => void; stopPropagation: () => void }) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    if (!isFrontCover) {
+      setIsFlipping(true);
+      setNextPageDirection('prev');
+      setFlipStartData(currentPage);
+      bookRef.current?.pageFlip()?.flipPrev();
+    }
+  };
+
+  const handleNextClick = (e?: { preventDefault: () => void; stopPropagation: () => void }) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    if (!isBackCover) {
+      setIsFlipping(true);
+      setNextPageDirection('next');
+      setFlipStartData(currentPage);
+      bookRef.current?.pageFlip()?.flipNext();
+    }
+  };
+
+  useEffect(() => {
+    if (isMobile) return;
+    // react-pageflip does not expose the internal page DOM nodes via its public ref,
+    // so this class-based lookup is used to capture mousedown on rendered .page elements.
+    const bookElement = document.querySelector<HTMLElement>('.stellar-book');
+    if (!bookElement) return;
+
+    const handlePageMouseDown = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      const pageElement = target.closest('.page');
+      if (pageElement) {
+        const pageIndex = Array.from(bookElement.querySelectorAll('.page')).indexOf(pageElement);
+        if (pageIndex !== -1) {
+          setIsFlipping(true);
+          setFlipStartData(pageIndex);
+
+          if (pageIndex === 0) {
+            setNextPageDirection('next');
+          } else if (pageIndex === totalPages - 2) {
+            setNextPageDirection('next');
+          } else if (pageIndex === totalPages - 1) {
+            setNextPageDirection('prev');
+          } else if (pageIndex === 1 && currentPage === 0) {
+            setNextPageDirection('prev');
+          }
+        }
+      }
+    };
+
+    bookElement.addEventListener('mousedown', handlePageMouseDown);
+
+    return () => {
+      bookElement.removeEventListener('mousedown', handlePageMouseDown);
+    };
+  }, [currentPage, isMobile]);
+
+  const scrollToSocials = () => {
+    scrollToSection(document.getElementById('socials-section'));
+  };
+
+  return (
+    <section id={id} className="resume-section">
+      <h2 className="sr-only">{t('resume')}</h2>
+      <StarBackground />
+
+      {isMobile ? (
+        <motion.div
+          key="mobile-view"
+          className="mobile-resume-view"
+          variants={containerVariants}
+          initial="hidden"
+          whileInView="visible"
+        >
+          <div className="mobile-card">
+            <div className="icon-circle">
+              <Code size={40} className="mobile-icon" />
+            </div>
+            <p className="mobile-title">Srimathi</p>
+            <p className="mobile-subtitle">{t('resume_content.cover.subtitle')}</p>
+
+            <div className="mobile-divider"></div>
+
+            <p className="mobile-desc">{t('resume_content.p1.text')}</p>
+
+            <button className="mobile-download-btn" onClick={onDownloadCV}>
+              <Download size={20} />
+              <span>{t('resume_content.p6.btn_pdf')}</span>
+            </button>
+          </div>
+        </motion.div>
+      ) : (
+        <motion.div
+          key="desktop-view"
+          className={`book-wrapper ${isMobile ? 'mobile-mode' : ''}`}
+          variants={containerVariants}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: false, amount: 0.3 }}
+        >
+          <motion.button
+            type="button"
+            variants={itemVariants}
+            className={`nav-arrow left ${isFrontCover ? 'disabled' : ''}`}
+            aria-label={t('resume_content.nav.prev')}
+            onClick={(e) => handlePrevClick(e)}
+            disabled={isFrontCover}
+            style={{
+              cursor: isFrontCover ? 'default' : 'pointer',
+              pointerEvents: isFrontCover ? 'none' : 'auto',
+              opacity: isFrontCover ? 0.3 : 1,
+            }}
+          >
+            <ChevronLeft size={isMobile ? 30 : 45} />
+          </motion.button>
+
+          <motion.div className="book-container" variants={itemVariants}>
+            {!isMobile && (
+              <button
+                type="button"
+                className={`bookmark-tab ${bookmarkState}`}
+                aria-label={t('resume_content.actions.download_cv')}
+                onClick={onDownloadCV}
+                disabled={isFrontCover || isBackCover}
+                style={{
+                  cursor: isFrontCover || isBackCover ? 'default' : 'pointer',
+                }}
+              >
+                <Download
+                  size={18}
+                  className="bookmark-icon"
+                  style={{ opacity: isFrontCover || isBackCover ? 0 : 1 }}
+                />
+                <span
+                  className="bookmark-text"
+                  style={{ opacity: isFrontCover || isBackCover ? 0 : 1 }}
+                >
+                  {t('resume')}
+                </span>
+              </button>
+            )}
+            <HTMLFlipBook
+              width={450}
+              height={600}
+              size="fixed"
+              minWidth={450}
+              maxWidth={450}
+              minHeight={600}
+              maxHeight={600}
+              showCover={true}
+              useMouseEvents={true}
+              className="stellar-book"
+              ref={bookRef}
+              onFlip={onFlip}
+              onFlipStart={onFlipStart}
+              flippingTime={900}
+              usePortrait={false}
+              startPage={0}
+              autoSize={true}
+              showPageCorners={true}
+              drawShadow={true}
+              maxShadowOpacity={0.5}
+            >
+              {/* Pagina 0: Cover */}
+              <Page number="" className="is-cover page-right" density="hard">
+                <div className="cover-content">
+                  <div className="corner-ornament top-left"></div>
+                  <div className="corner-ornament top-right"></div>
+                  <div className="corner-ornament bottom-left"></div>
+                  <div className="corner-ornament bottom-right"></div>
+
+                  <div className="cover-main-visual">
+                    <div className="seal-container">
+                      <Code size={40} strokeWidth={1.5} className="seal-icon" />
+                    </div>
+                    <div className="gold-line-v"></div>
+                  </div>
+
+                  <div className="cover-text-group">
+                    <p className="book-title">Srimathi</p>
+                    <div className="title-separator">
+                      <span className="dot"></span>
+                      <span className="line"></span>
+                      <span className="dot"></span>
+                    </div>
+                    <p className="book-subtitle">{t('resume_content.cover.subtitle')}</p>
+                    <div className="edition-badge">{t('resume_content.cover.edition')}</div>
+                  </div>
+                </div>
+              </Page>
+
+              {/* Page 1: Professional Profile */}
+              <Page number="1" className="page-left">
+                <div className="page-inner-centered">
+                  <h2 className="page-header">
+                    <User size={18} /> {t('resume_content.p1.title')}
+                  </h2>
+                  <div className="section-content">
+                    <p className="summary-text">{t('resume_content.p1.text')}</p>
+                  </div>
+                </div>
+              </Page>
+
+              {/* Page 2: Associate Degree */}
+              <Page number="2" className="page-right">
+                <div className="page-inner">
+                  <h2 className="page-header">
+                    <GraduationCap size={18} /> {t('resume_content.p2.title')}
+                  </h2>
+                  <div className="section-content">
+                    <span className="year-label">2023 - 2025</span>
+                    <h3>{t('resume_content.p2.program')}</h3>
+                    <p className="subtitle-text">{t('resume_content.p2.school')}</p>
+                    <p className="distinction-badge">{t('resume_content.p2.distinction')}</p>
+                    <ul className="achievement-list">
+                      <li>
+                        <Trans i18nKey="resume_content.p2.list_dev">
+                          <strong>Development:</strong>
+                        </Trans>
+                      </li>
+                      <li>
+                        <Trans i18nKey="resume_content.p2.list_infra">
+                          <strong>Infrastructure:</strong>
+                        </Trans>
+                      </li>
+                      <li>
+                        <Trans i18nKey="resume_content.p2.list_method">
+                          <strong>Methodology:</strong>
+                        </Trans>
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+              </Page>
+
+              {/* Page 3: Bachelor's Degree (Page 2) */}
+              <Page number="3" className="page-left">
+                <div className="page-inner">
+                  <h2 className="page-header">
+                    <TrendingUp size={22} /> {t('resume_content.p3.title')}
+                  </h2>
+                  <div className="section-content">
+                    <span className="year-label">2025 - 2027</span>
+                    <h3>{t('resume_content.p3.program')}</h3>
+                    <p className="subtitle-text">{t('resume_content.p3.specialization')}</p>
+                    <div className="highlight-box">
+                      <Trans i18nKey="resume_content.p3.track_info">
+                        <strong>Accelerated Track:</strong>
+                      </Trans>
+                    </div>
+                    <ul>
+                      <li>
+                        <Trans
+                          i18nKey="resume_content.p3.list_arch_design"
+                          components={[<strong />]}
+                        />
+                      </li>
+                      <li>
+                        <Trans
+                          i18nKey="resume_content.p3.list_engineering"
+                          components={[<strong />]}
+                        />
+                      </li>
+                      <li>
+                        <Trans
+                          i18nKey="resume_content.p3.list_systems_data"
+                          components={[<strong />]}
+                        />
+                      </li>
+                      <li>
+                        <Trans
+                          i18nKey="resume_content.p3.list_web_security"
+                          components={[<strong />]}
+                        />
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+              </Page>
+
+              {/* Page 4: Professional Experience (Page 3) */}
+              <Page number="4" className="page-right">
+                <div className="page-inner">
+                  <h2 className="page-header">
+                    <Briefcase size={22} /> {t('resume_content.p4.title')}
+                  </h2>
+                  <div className="section-content">
+                    <span className="year-label">{t('resume_content.p4.context')}</span>
+                    <h3>Chennai</h3>
+                    <p className="subtitle-text">{t('resume_content.p4.role')}</p>
+                    <ul>
+                      <li>
+                        <Trans i18nKey="resume_content.p4.bullet_1">
+                          <strong>OpenSearch</strong>
+                        </Trans>
+                      </li>
+                      <li>
+                        <Trans i18nKey="resume_content.p4.bullet_2">
+                          <strong>Docker</strong>
+                        </Trans>
+                      </li>
+                    </ul>
+                    <div className="tech-tags-container">
+                      <span>Playwrright</span> <span>Java</span> <span>Selenium</span>{' '}
+                      <span>Python</span> <span>TYPESCRIPT</span>
+                    </div>
+                  </div>
+                </div>
+              </Page>
+
+              {/* Page 5: Career Vision (Page 4) */}
+              <Page number="5" className="page-left">
+                <div className="page-inner">
+                  <h2 className="page-header">
+                    <Target size={18} /> {t('resume_content.p5.title')}
+                  </h2>
+                  <div className="section-content">
+                    <div className="goal-section">
+                      <h4 className="subtitle-gold">{t('resume_content.p5.target_title')}</h4>
+                      <p>{t('resume_content.p5.target_text')}</p>
+                    </div>
+                    <div className="goal-section" style={{ marginTop: '20px' }}>
+                      <h4 className="subtitle-gold">{t('resume_content.p5.readiness_title')}</h4>
+                      <ul className="goal-list-compact">
+                        <li>
+                          <Trans i18nKey="resume_content.p5.list_jp">
+                            <strong>Japanese:</strong>
+                          </Trans>
+                        </li>
+                        <li>
+                          <Trans i18nKey="resume_content.p5.list_tech">
+                            <strong>Technical:</strong>
+                          </Trans>
+                        </li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              </Page>
+
+              {/* Page 6: Closing Page */}
+              <Page number="6" className="page-right">
+                <div className="page-inner-back">
+                  <div className="closing-content">
+                    <Code size={40} className="faded-icon" />
+                    <h3>{t('resume_content.p6.title')}</h3>
+                    <div className="divider-small"></div>
+                    <p className="sub-text">
+                      <Trans
+                        i18nKey="resume_content.p6.text"
+                        components={[<strong key="net" />, <strong key="intl" />]}
+                      />
+                    </p>
+                    <button className="download-btn-styled" onClick={onDownloadCV}>
+                      <Download size={16} /> {t('resume_content.p6.btn_pdf')}
+                    </button>
+                    <button
+                      type="button"
+                      className="scroll-hint"
+                      aria-label={t('resume_content.actions.scroll_to_socials')}
+                      onClick={scrollToSocials}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '6px',
+                        marginTop: '15px',
+                      }}
+                    >
+                      {t('resume_content.p6.scroll_hint')}
+                      <ArrowDown size={18} />
+                    </button>
+                  </div>
+                </div>
+              </Page>
+
+              {/* Pagina 7: Back Cover */}
+              <Page number="" className="is-cover is-back-cover page-left" density="hard">
+                <div className="cover-content">
+                  <div className="corner-ornament top-left"></div>
+                  <div className="corner-ornament top-right"></div>
+                  <div className="corner-ornament bottom-left"></div>
+                  <div className="corner-ornament bottom-right"></div>
+                  <div className="back-cover-content">
+                    <div className="back-seal">
+                      <Code size={55} strokeWidth={1} className="back-logo-icon" />
+                    </div>
+                    <div className="back-text-group">
+                      <div className="title-separator small">
+                        <span className="line"></span>
+                        <span className="dot"></span>
+                        <span className="line"></span>
+                      </div>
+                      <p className="copyright">© 2026 Srimathi</p>
+                      <div className="tech-badge">{t('resume_content.cover.built_with')}</div>
+                    </div>
+                  </div>
+                </div>
+              </Page>
+            </HTMLFlipBook>
+          </motion.div>
+
+          <motion.button
+            type="button"
+            variants={itemVariants}
+            className={`nav-arrow right ${isBackCover ? 'disabled' : ''}`}
+            aria-label={t('resume_content.nav.next')}
+            onClick={(e) => handleNextClick(e)}
+            disabled={isBackCover}
+            style={{
+              cursor: isBackCover ? 'default' : 'pointer',
+              pointerEvents: isBackCover ? 'none' : 'auto',
+              opacity: isBackCover ? 0.3 : 1,
+            }}
+          >
+            <ChevronRight size={45} />
+          </motion.button>
+        </motion.div>
+      )}
+    </section>
+  );
+};
+
+export default ResumeSection;

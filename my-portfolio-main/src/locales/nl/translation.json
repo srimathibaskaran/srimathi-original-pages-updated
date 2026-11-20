@@ -1,0 +1,146 @@
+{
+  "nav": {
+    "socials": "Socials",
+    "resume": "CV",
+    "projects": "Projecten",
+    "about": "Over mij",
+    "skills": "Vaardigheden"
+  },
+  "about": {
+    "title": "Over mij",
+    "greeting": "Hallo, ik ben <0>Victoria</0> 👋",
+    "bio_p1": "Ik ben een <0>Belgische studente software engineering</0>. Wat begon als wat Python programmeren uit interesse, groeide al snel uit tot een serieuze passie. Voor de fun LeetCode-problemen oplossen bracht me uiteindelijk bij mijn graduaat aan Howest, waar ik <1>met grote onderscheiding</1> afstudeerde.",
+    "bio_p2": "Momenteel volg ik een Bachelor Toegepaste Informatica met specialisatie software engineering. Ik combineer schoolprojecten met eigen projecten, zoals het bouwen van deze website. Buiten het coderen leer ik <0>Japans (JLPT N4)</0>, ga ik graag wandelen in de Belgische natuur en neem ik foto’s.",
+    "bio_p3": "In februari 2027 start ik mijn <0>stage bij DLC in België</0>. Ik hou ervan om technische nauwkeurigheid te combineren met creativiteit, of dat nu in code is of achter de camera."
+  },
+  "projects": "Projecten",
+  "classified": "GECLASSIFICEERD",
+  "project_items": {
+    "p1": {
+      "desc": "Schilderachtige routeplanning-engine over een PostGIS-graaf met 20M knopen en 44M randen.",
+      "context": "SOLO PROJECT"
+    },
+    "p2": {
+      "desc": "Mobiele app voor het beheren van community-activiteiten.",
+      "context": "GROEPSPROJECT"
+    },
+    "p3": {
+      "title": "Zoekinfrastructuur",
+      "desc": "Intern project voor het optimaliseren van grootschalige dataverwerking.",
+      "context": "STAGE"
+    }
+  },
+  "skills": "Vaardigheden",
+  "skills_categories": {
+    "languages": "Programmeertalen",
+    "backend": "Backend-ontwikkeling",
+    "frontend": "Frontend- & UI-ontwikkeling",
+    "mobile_desktop": "Mobiele & desktopontwikkeling",
+    "devops": "DevOps & infrastructuur",
+    "tooling": "Tools & versiebeheer"
+  },
+  "contact": "Neem contact op",
+  "socials": {
+    "subtitle": "Een nieuwe horizon wacht.",
+    "linkedin_handle": "Laten we connecteren",
+    "github_handle": "Bekijk projecten",
+    "email_handle": "Stuur een bericht",
+    "return_cosmos": "Terug naar de Cosmos"
+  },
+  "resume": "CV",
+  "drag_hint": "Sleep om het universum te draaien",
+  "resume_content": {
+    "cover": {
+      "subtitle": "Software Engineering",
+      "edition": "Editie 2026 // Portfolio",
+      "built_with": "Gebouwd met React"
+    },
+    "nav": {
+      "prev": "Vorige pagina",
+      "next": "Volgende pagina"
+    },
+    "actions": {
+      "download_cv": "Download CV als PDF",
+      "scroll_to_socials": "Scroll naar socials-sectie"
+    },
+    "p1": {
+      "title": "Professioneel Profiel",
+      "text": "Laatstejaarsstudent software engineering, met een afgeronde programmeeropleiding en een stage achter de rug. Ik bouw backends in Python en C# en frontends in React, Vue en TypeScript, en wat me het meest interesseert is hoe de structuur van een systeem bepaalt hoe ver het kan groeien. Mijn hoofdproject is een routeplanningsengine over 20 miljoen kaartknooppunten, gebouwd volgens een hexagonale architectuur. Onlangs leverde ik een tweetalige productiewebsite op voor een klant in Tokio. Vanaf februari 2027 loop ik stage als software engineer bij DLC in België."
+    },
+    "p2": {
+      "title": "Graduaat",
+      "program": "Programmeren (Graduaat)",
+      "school": "Howest",
+      "distinction": "Afgestudeerd met grote onderscheiding",
+      "list_dev": "<1>Ontwikkeling:</1> C# & .NET, HTML5, CSS3, JavaScript",
+      "list_infra": "<1>Infrastructuur:</1> MS SQL / T-SQL, Docker",
+      "list_method": "<1>Methodologie:</1> Agile/Scrum, Git, GitHub"
+    },
+    "p3": {
+      "title": "Bacheloropleiding",
+      "program": "Toegepaste Informatica",
+      "specialization": "Afstudeerrichting Software Engineering",
+      "track_info": "<1>Verkort traject:</1> Instroom in jaar 2 op basis van mijn behaalde graduaat.",
+      "list_arch_design": "<0>Architectuur & Design:</0> Hexagonale architectuur, Software Design, DDD",
+      "list_engineering": "<0>Engineering:</0> Datastructuren & algoritmes, Software Engineering Project, Bachelor thesis",
+      "list_systems_data": "<0>Systemen & Data:</0> Systeemarchitectuur & deployment, Besturingssystemen",
+      "list_web_security": "<0>Web & Security:</0> Webtechnologie, UX Engineering, Web pentesting"
+    },
+    "p4": {
+      "title": "Ervaring",
+      "context": "STAGE • 2025",
+      "role": "Zoekgestuurd Data-ophaalsysteem",
+      "bullet_1": "Sub-seconde responstijden gerealiseerd met <0>OpenSearch</0>.",
+      "bullet_2": "Services gecontaineriseerd met <0>Docker</0> voor productie."
+    },
+    "p5": {
+      "title": "Goals?",
+      "target_title": "Volgende stap: stage bij DLC (2027)",
+      "target_text": "Software engineering-stage bij DLC in België, vanaf februari 2027.",
+      "readiness_title": "Waar ik nu aan werk",
+      "list_jp": "<1>Japans:</1> Actief bezig met JLPT N4.",
+      "list_tech": "<1>Technisch:</1> Mijn full-stack kennis verder uitbouwen en werken aan persoonlijke projecten."
+    },
+    "p6": {
+      "title": "Bedankt voor je tijd",
+      "text": "Ben je op zoek naar een gedreven developer met <0>full-stack expertise</0> en <1>internationale projectervaring</1>, dan hoor ik graag van je.",
+      "btn_pdf": "PDF-versie bekijken",
+      "scroll_hint": "Ontdek mijn socials hieronder"
+    }
+  },
+  "notes": {
+    "title": "Notes",
+    "subtitle": "Events, hackathons & wat ik leerde",
+    "intro": "Korte verslagen van de events, hackathons en projecten waaraan ik deelneem als laatstejaarsstudent software engineering aan Howest.",
+    "by": "door Victoria Ghoos",
+    "read_more": "Lees verder",
+    "all_notes": "Alle notes",
+    "back_to_portfolio": "Portfolio",
+    "back_to_notes": "Alle notes",
+    "about_link": "Meer over mij",
+    "not_found": "Deze note bestaat niet (meer).",
+    "empty": "Nog geen notes.",
+    "draft": "Concept",
+    "types": {
+      "event": "Event",
+      "hackathon": "Hackathon",
+      "podcast": "Podcast",
+      "project": "Project",
+      "site": "Site",
+      "other": "Note"
+    }
+  },
+  "a11y": {
+    "skip_to_content": "Ga naar de hoofdinhoud",
+    "home_heading": "Victoria Ghoos, software engineer",
+    "sections_nav": "Secties",
+    "language": "Taal",
+    "photo_alt": "Portret van Victoria Ghoos"
+  },
+  "music": {
+    "muted": "Audio uit",
+    "playing": "Lo-fi",
+    "play": "achtergrondmuziek afspelen",
+    "mute": "achtergrondmuziek dempen"
+  }
+}

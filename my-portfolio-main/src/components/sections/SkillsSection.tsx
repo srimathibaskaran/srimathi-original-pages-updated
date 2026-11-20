@@ -1,0 +1,283 @@
+import { useMemo, memo, useRef, type CSSProperties } from 'react';
+import { motion, useInView, useReducedMotion, type Variants } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
+import '../../styles/sections/SkillsSection.scss';
+import sakuraTree from '../../assets/images/sakuratree.webp';
+import petalImg from '../../assets/images/petal.png';
+import useCanvasAnimationLoop, { type CanvasDrawArgs } from '../../hooks/useCanvasAnimationLoop';
+import {
+  SiPython,
+  SiJavascript,
+  SiTypescript,
+  SiPhp, 
+  SiNodedotjs,
+   
+  SiLaravel,
+  
+  SiDocker,
+  SiLinux,
+  SiKubernetes,
+  SiTerraform,
+  SiGit,
+  SiGithub,
+  SiGitlab,
+  SiPostman,
+  
+  SiSpringboot,
+  SiApache,
+} from 'react-icons/si';
+import { BsDatabase } from 'react-icons/bs';
+import { TbApi, TbBrandAzure } from 'react-icons/tb';
+import { DiJava, DiJenkins, DiJira, DiMysql } from 'react-icons/di';
+import { PiOpenAiLogo } from 'react-icons/pi';
+
+const SkillsStarsCanvas = memo(function SkillsStarsCanvas() {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const rootRef = useRef<HTMLDivElement>(null);
+  const stars = useMemo(
+    () =>
+      [...Array(250)].map(() => ({
+        x: Math.random(),
+        y: Math.random(),
+        radius: Math.random() * 0.9 + 0.4,
+        opacity: Math.random() * 0.7 + 0.3,
+        phase: Math.random() * Math.PI * 2,
+        speed: Math.random() * 0.002 + 0.001,
+      })),
+    [],
+  );
+
+  useCanvasAnimationLoop(canvasRef, {
+    rootRef,
+    onDraw: ({ ctx, width, height, timestamp, isStatic }: CanvasDrawArgs) => {
+      ctx.clearRect(0, 0, width, height);
+      ctx.fillStyle = '#ffffff';
+      stars.forEach((star) => {
+        const twinkle = isStatic ? 1 : 0.75 + Math.sin(timestamp * star.speed + star.phase) * 0.15;
+        ctx.globalAlpha = Math.min(1, Math.max(0, star.opacity * twinkle));
+        ctx.beginPath();
+        ctx.arc(star.x * width, star.y * height, star.radius, 0, Math.PI * 2);
+        ctx.fill();
+      });
+      ctx.globalAlpha = 1;
+    },
+  });
+
+  return (
+    <div ref={rootRef} className="skills-stars-container">
+      <canvas ref={canvasRef} className="skills-stars-canvas" aria-hidden="true" />
+    </div>
+  );
+});
+
+const FallingPetal = memo(function FallingPetal() {
+  const settings = useMemo(
+    () => ({
+      left: Math.random() * 100,
+      duration: 10 + Math.random() * 15,
+      delay: Math.random() * 20,
+      scale: 0.3 + Math.random() * 0.7,
+      drift: (Math.random() - 0.5) * 100,
+      brightness: 0.7 + Math.random() * 0.5,
+      rotate: 360 + Math.random() * 180,
+    }),
+    [],
+  );
+
+  return (
+    <motion.img
+      src={petalImg}
+      className="sakura-petal-real"
+      style={{
+        left: `${settings.left}%`,
+        scale: settings.scale,
+        filter: `brightness(${settings.brightness})`,
+      }}
+      initial={{ y: -50, opacity: 0, rotate: 0, rotateX: 0, rotateY: 0 }}
+      animate={{
+        y: '110vh',
+        opacity: [0, 1, 1, 0],
+        x: [0, settings.drift, -settings.drift / 2, settings.drift, 0],
+        rotate: [0, settings.rotate],
+        rotateX: [0, 180, 360],
+        rotateY: [0, 180, 360],
+      }}
+      transition={{
+        duration: settings.duration,
+        repeat: Infinity,
+        delay: settings.delay,
+        ease: 'linear',
+      }}
+    />
+  );
+});
+
+const containerVariants: Variants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: { staggerChildren: 0.2, delayChildren: 0.3 },
+  },
+};
+
+const itemVariants: Variants = {
+  hidden: { y: 40, opacity: 0 },
+  visible: {
+    y: 0,
+    opacity: 1,
+    transition: { duration: 0.45, ease: 'easeOut' },
+  },
+};
+
+const SkillsSection = ({ id }: { id: string }) => {
+  const { t } = useTranslation();
+  const reduceMotion = useReducedMotion();
+  const petalsRef = useRef<HTMLDivElement>(null);
+  const isPetalsInView = useInView(petalsRef, { once: false, amount: 0.1 });
+
+  const petals = useMemo(() => Array.from({ length: 12 }), []);
+
+  const skillGroups = useMemo(
+    () => [
+      {
+        id: 'languages',
+        title: t('skills_categories.languages'),
+        featured: true,
+        accent: '#f0a8d0',
+        skills: [
+          { name: 'Java', icon: DiJava },
+          { name: 'Python', icon: SiPython },
+          { name: 'JavaScript', icon: SiJavascript },
+          { name: 'TypeScript', icon: SiTypescript },
+          { name: 'SQL', icon: BsDatabase },
+          { name: 'PHP', icon: SiPhp },
+        ],
+      },
+      {
+        id: 'backend',
+        title: t('skills_categories.backend'),
+        featured: true,
+        accent: '#d295d6',
+        skills: [
+          { name: 'Java', icon: DiJava },
+    { name: 'Spring Boot', icon: SiSpringboot },
+    { name: 'Python', icon: SiPython },
+    { name: 'PHP', icon: SiPhp },
+    { name: 'Laravel', icon: SiLaravel },
+    { name: 'REST APIs', icon: TbApi },
+    { name: 'Node.js', icon: SiNodedotjs },
+    { name: 'OOP', icon: null },
+    { name: 'API Integration', icon: TbApi },
+        ],
+      },
+      {
+        id: 'frontend',
+        title: t('skills_categories.frontend'),
+        accent: '#bb95e0',
+        skills: [
+           { name: 'Playwright', icon: null },
+  { name: 'Selenium', icon: null},
+  { name: 'TestNG', icon: null },
+  { name: 'JUnit', icon: null },
+ 
+   
+  { name: 'API Testing', icon: null },
+  { name: 'Postman', icon: SiPostman },
+  { name: 'JIRA', icon: DiJira },
+  { name: 'Jenkins', icon: DiJenkins },
+  { name: 'Maven', icon: SiApache },
+  { name: 'SQL Testing', icon: DiMysql },
+        ],
+      },
+      {
+        id: 'devops',
+        title: t('skills_categories.devops'),
+        accent: '#a68ee6',
+        skills: [
+          { name: 'Docker', icon: SiDocker },
+          { name: 'Kubernetes', icon: SiKubernetes },
+          { name: 'Linux', icon: SiLinux },
+          { name: 'Virtual Machines', icon: null },
+          { name: 'CI/CD', icon: null },
+          { name: 'Terraform', icon: SiTerraform },
+          { name: 'Azure', icon: TbBrandAzure },
+        ],
+      },
+      {
+        id: 'tooling',
+        title: t('skills_categories.tooling'),
+        accent: '#9490ea',
+        skills: [
+          { name: 'Git', icon: SiGit },
+          { name: 'GitHub', icon: SiGithub },
+          { name: 'GitLab', icon: SiGitlab },
+          { name: 'Postman', icon: SiPostman },
+          { name: 'OpenAI', icon: PiOpenAiLogo },
+        ],
+      },
+    ],
+    [t],
+  );
+
+  return (
+    <section id={id} className="skills-section" aria-labelledby={`${id}-title`}>
+      <div className="background-elements">
+        <div className="nebula-bg" />
+        <SkillsStarsCanvas />
+      </div>
+
+      <div className="trees-layer">
+        <div className="tree-wrapper left">
+          <img src={sakuraTree} alt="" className="tree-img" />
+        </div>
+        <div className="tree-wrapper right">
+          <img src={sakuraTree} alt="" className="tree-img" />
+        </div>
+      </div>
+
+      <div className="petals-layer" ref={petalsRef}>
+        {isPetalsInView &&
+          !reduceMotion &&
+          petals.map((_, i) => <FallingPetal key={`petal-${i}`} />)}
+      </div>
+
+      <motion.div
+        className="content-wrapper"
+        variants={containerVariants}
+        initial="hidden"
+        whileInView="visible"
+        viewport={{ once: false, amount: 0.2 }}
+      >
+        <header className="header-container">
+          <motion.h2 id={`${id}-title`} className="main-title" variants={itemVariants}>
+            {t('skills')}
+          </motion.h2>
+          <motion.div className="title-underline" variants={itemVariants} />
+        </header>
+
+        <div className="skills-grid">
+          {skillGroups.map((group) => (
+            <motion.div
+              key={group.id}
+              className={`skill-category-card${group.featured ? ' featured' : ''}`}
+              style={{ '--accent': group.accent } as CSSProperties}
+              variants={itemVariants}
+            >
+              <h3>{group.title}</h3>
+              <div className="skill-tags">
+                {group.skills.map(({ name, icon: Icon }) => (
+                  <span key={name} className="tag">
+                    {Icon && <Icon className="tag-icon" aria-hidden="true" />}
+                    {name}
+                  </span>
+                ))}
+              </div>
+            </motion.div>
+          ))}
+        </div>
+      </motion.div>
+    </section>
+  );
+};
+
+export default memo(SkillsSection);

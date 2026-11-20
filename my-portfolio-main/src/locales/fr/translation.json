@@ -1,0 +1,146 @@
+{
+  "nav": {
+    "socials": "Socials",
+    "resume": "CV",
+    "projects": "Projets",
+    "about": "À propos",
+    "skills": "Compétences"
+  },
+  "about": {
+    "title": "À propos de moi",
+    "greeting": "Salut, moi c’est <0>Victoria</0> 👋",
+    "bio_p1": "Je suis <0>étudiante belge en ingénierie logicielle</0>. À la base, je codais en Python par curiosité, puis c’est vite devenu plus sérieux. Résoudre des problèmes sur LeetCode « pour le fun » m’a finalement menée à obtenir mon graduat à Howest, que j’ai obtenu <1>avec grande distinction</1>.",
+    "bio_p2": "Aujourd’hui, je poursuis un bachelier en Informatique appliquée, avec une spécialisation en ingénierie logicielle. Je jongle entre projets scolaires et projets perso, comme la création de ce site. En dehors du code, j’apprends le <0>japonais (JLPT N4)</0>, j’aime me balader dans la nature belge faire de la photographie.",
+    "bio_p3": "En février 2027, je commence mon <0>stage chez DLC en Belgique</0>. J’aime mêler rigueur technique et créativité, que ce soit en corrigeant du code ou en cherchant la photo parfaite."
+  },
+  "projects": "Projets",
+  "classified": "CLASSIFIÉ",
+  "project_items": {
+    "p1": {
+      "desc": "Moteur d'itinéraires pittoresques sur un graphe PostGIS de 20M nœuds et 44M arcs.",
+      "context": "PROJET SOLO"
+    },
+    "p2": {
+      "desc": "Application mobile facilitant la gestion des activités communautaires.",
+      "context": "PROJET COLLECTIF"
+    },
+    "p3": {
+      "title": "OpenSearch",
+      "desc": "Projet interne visant à optimiser la récupération de grandes quantités de données.",
+      "context": "STAGE"
+    }
+  },
+  "skills": "Compétences",
+  "skills_categories": {
+    "languages": "Langages de programmation",
+    "backend": "Développement backend",
+    "frontend": "Développement frontend & UI",
+    "mobile_desktop": "Applications mobiles et desktop",
+    "devops": "DevOps et infrastructure",
+    "tooling": "Outils et contrôle de version"
+  },
+  "contact": "Contact",
+  "socials": {
+    "subtitle": "Un nouvel horizon t'attend.",
+    "linkedin_handle": "On se connecte ?",
+    "github_handle": "Découvrir mes projets",
+    "email_handle": "Contacte-moi",
+    "return_cosmos": "Retour au Cosmos"
+  },
+  "resume": "CV",
+  "drag_hint": "Faites glisser pour faire tourner le cosmos",
+  "resume_content": {
+    "cover": {
+      "subtitle": "Software Engineering",
+      "edition": "Édition 2026 // Portfolio",
+      "built_with": "Développé avec React"
+    },
+    "nav": {
+      "prev": "Page précédente",
+      "next": "Page suivante"
+    },
+    "actions": {
+      "download_cv": "Télécharger le CV en PDF",
+      "scroll_to_socials": "Aller à la section des réseaux"
+    },
+    "p1": {
+      "title": "Profil",
+      "text": "Étudiante en dernière année d'ingénierie logicielle, diplômée en programmation et déjà passée par un stage. Je développe des back-ends en Python et C#, et des front-ends en React, Vue et TypeScript ; ce qui m'intéresse avant tout, c'est la structure d'un système et sa capacité à évoluer. Mon projet principal : un moteur de planification d'itinéraires sur 20 millions de nœuds, en architecture hexagonale. J'ai récemment livré un site bilingue en production pour un client à Tokyo. Stage en ingénierie logicielle chez DLC, en Belgique, dès février 2027."
+    },
+    "p2": {
+      "title": "Diplôme professionnel",
+      "program": "Programmation",
+      "school": "Howest – Haute École",
+      "distinction": "Diplômée avec grande distinction",
+      "list_dev": "<1>Développement :</1> C# & .NET, HTML5, CSS3, JavaScript",
+      "list_infra": "<1>Infrastructure :</1> MS SQL / T-SQL, conteneurisation Docker",
+      "list_method": "<1>Méthodologie :</1> Agile/Scrum, Git, GitHub"
+    },
+    "p3": {
+      "title": "Bachelier",
+      "program": "Informatique appliquée",
+      "specialization": "Orientation ingénierie logicielle",
+      "track_info": "<1>Parcours accéléré :</1> Accès direct en 2e année sur base du diplôme professionnel.",
+      "list_arch_design": "<0>Architecture & Design :</0> Architecture hexagonale, Software Design, DDD",
+      "list_engineering": "<0>Ingénierie :</0> Structures de données & algorithmes, Projet d'ingénierie logicielle, Mémoire de fin d'études",
+      "list_systems_data": "<0>Systèmes & Données :</0> Architecture système & déploiement, Systèmes d'exploitation",
+      "list_web_security": "<0>Web & Sécurité :</0> Technologies web, UX Engineering, Pentesting web"
+    },
+    "p4": {
+      "title": "Expérience",
+      "context": "STAGE • 2025",
+      "role": "Système de recherche de données",
+      "bullet_1": "Réduction du temps de réponse à moins d’une seconde grâce à <1>OpenSearch</1>.",
+      "bullet_2": "Déploiement des services en production avec <1>Docker</1>."
+    },
+    "p5": {
+      "title": "Objectifs?",
+      "target_title": "Prochaine étape : stage chez DLC (2027)",
+      "target_text": "Stage en ingénierie logicielle chez DLC, en Belgique, à partir de février 2027.",
+      "readiness_title": "Compétences en développement",
+      "list_jp": "<1>Japonais :</1> Niveau JLPT N4 (en cours).",
+      "list_tech": "<1>Technique :</1> Renforcement continu de mes compétences full-stack et création de projets personnels."
+    },
+    "p6": {
+      "title": "Merci pour votre temps",
+      "text": "Si vous recherchez une développeuse motivée avec une <0>expertise full-stack</0> et une <1>expérience dans des projets internationaux</1>, n’hésitez pas à me contacter.",
+      "btn_pdf": "Version PDF",
+      "scroll_hint": "Découvrez mes réseaux ci-dessous"
+    }
+  },
+  "notes": {
+    "title": "Notes",
+    "subtitle": "Événements, hackathons & leçons apprises",
+    "intro": "De courts comptes rendus des événements, hackathons et projets auxquels je participe en tant qu’étudiante en dernière année d’ingénierie logicielle à Howest.",
+    "by": "par Victoria Ghoos",
+    "read_more": "Lire la suite",
+    "all_notes": "Toutes les notes",
+    "back_to_portfolio": "Portfolio",
+    "back_to_notes": "Toutes les notes",
+    "about_link": "En savoir plus sur moi",
+    "not_found": "Cette note n’existe pas (ou plus).",
+    "empty": "Pas encore de notes.",
+    "draft": "Brouillon",
+    "types": {
+      "event": "Événement",
+      "hackathon": "Hackathon",
+      "podcast": "Podcast",
+      "project": "Projet",
+      "site": "Site",
+      "other": "Note"
+    }
+  },
+  "a11y": {
+    "skip_to_content": "Aller au contenu principal",
+    "home_heading": "Victoria Ghoos, ingénieure logiciel",
+    "sections_nav": "Sections",
+    "language": "Langue",
+    "photo_alt": "Portrait de Victoria Ghoos"
+  },
+  "music": {
+    "muted": "Son coupé",
+    "playing": "Lo-fi",
+    "play": "lancer la musique de fond",
+    "mute": "couper la musique de fond"
+  }
+}

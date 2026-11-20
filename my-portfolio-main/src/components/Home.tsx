@@ -1,0 +1,747 @@
+import {
+  useState,
+  useRef,
+  useEffect,
+  useMemo,
+  useCallback,
+  memo,
+  Suspense,
+  type RefObject,
+  type MutableRefObject,
+  type CSSProperties,
+} from 'react';
+import { suspend } from 'suspend-react';
+import { Canvas, useFrame } from '@react-three/fiber';
+import { useTranslation } from 'react-i18next';
+import { Environment, Preload } from '@react-three/drei';
+import { motion, useInView, useReducedMotion } from 'framer-motion';
+import { useLocation } from 'react-router-dom';
+import * as THREE from 'three';
+import '../styles/home.scss';
+
+import MusicPlayer from './MusicPlayer';
+import LanguageSelector from './LanguageSelector';
+
+import avatarVideo from '../assets/images/avatar.webm';
+import avatarPng from '../assets/images/avatar.png';
+import skillVideo from '../assets/images/think.webm';
+import skillPng from '../assets/images/think.png';
+import codeVideo from '../assets/images/web-developer.webm';
+import codePng from '../assets/images/web-developer.png';
+import resumeVideo from '../assets/images/resume.webm';
+import resumePng from '../assets/images/resume.png';
+import socialsVideo from '../assets/images/social-media.webm';
+import socialsPng from '../assets/images/social-media.png';
+import NightSkyBackground, { type NightSkyHandle } from './NightSkyBackground';
+import InteractivePanel, { type PanelIcon } from './InteractivePanel';
+import CentralHologram from './CentralHologram';
+import CanvasErrorBoundary from './webgl/CanvasErrorBoundary';
+import { isWebGLAvailable, useContextLossHandler } from './webgl/webgl';
+import hologramImage from '../assets/images/hologram.png';
+import OutlineStars from './OutlineStars';
+import SectionsContainer from './sections/SectionsContainer';
+import { scrollToSection } from '../utils/scrollToSection';
+
+import catPoints from '../catPoints.json';
+import cameraPoints from '../cameraPoints.json';
+import bookPoints from '../bookPoints.json';
+import flowerPoints from '../flowerPoints.json';
+import headsetPoints from '../headsetPoints.json';
+
+const sunsetHdri = import('@pmndrs/assets/hdri/sunset.exr');
+
+// framer-motion's DOM types don't model react-three-fiber's `group` primitive, but the
+// resulting element is interpreted by whichever reconciler renders it (r3f's, here), so this
+// animates the underlying THREE.Group exactly like motion.div animates a real DOM element.
+const MotionGroup = (motion as unknown as { group: typeof motion.div }).group;
+
+interface ScalingConfig {
+  radius: number;
+  iconScale: number;
+  iconPlaneSize: number;
+  ringInner: number;
+  ringOuter: number;
+  labelMargin: number;
+  hologramScale: number;
+  hologramRadius: number;
+  hologramHalo: [number, number];
+  hologramY: number;
+}
+
+interface ConstellationScales {
+  about: number;
+  socials: number;
+  resume: number;
+  skills: number;
+  projects: number;
+}
+
+const DragHint = ({ isVisible }: { isVisible: boolean }) => {
+  const [shouldRender, setShouldRender] = useState(isVisible);
+  const { t } = useTranslation();
+
+  useEffect(() => {
+    if (isVisible) {
+      setShouldRender(true);
+    } else {
+      const timer = setTimeout(() => setShouldRender(false), 500);
+      return () => clearTimeout(timer);
+    }
+  }, [isVisible]);
+
+  if (!shouldRender) return null;
+
+  return <div className={`drag-hint ${!isVisible ? 'fade-out' : ''}`}>{t('drag_hint')}</div>;
+};
+
+const RotatingPanels = memo(function RotatingPanels({
+  navEnabled,
+  icons,
+  scalingConfig,
+  setActive,
+  panelPositions,
+  handleIconClick,
+  onPanelPointerUp,
+  isInView,
+  initialRotationComplete,
+  onInitialRotationComplete,
+  rotationYRef,
+  targetRotationYRef,
+}: {
+  navEnabled: boolean;
+  icons: PanelIcon[];
+  scalingConfig: ScalingConfig;
+  setActive: (id: string | null) => void;
+  panelPositions: [number, number, number][];
+  handleIconClick: (id: string) => void;
+  onPanelPointerUp: () => void;
+  isInView: boolean;
+  initialRotationComplete: boolean;
+  onInitialRotationComplete: () => void;
+  rotationYRef: MutableRefObject<number>;
+  targetRotationYRef: MutableRefObject<number>;
+}) {
+  const panelsGroupRef = useRef<THREE.Group>(null);
+  const introStartTimeRef = useRef<number | null>(null);
+  const introSpeedRef = useRef(0.6);
+  const reduceMotion = useReducedMotion();
+
+  useFrame(({ clock }, delta) => {
+    if (!panelsGroupRef.current) {
+      return;
+    }
+
+    if (!navEnabled || !isInView) {
+      panelsGroupRef.current.rotation.y = rotationYRef.current;
+      return;
+    }
+
+    if (!initialRotationComplete && reduceMotion) {
+      // no spinning intro for visitors who prefer reduced motion
+      onInitialRotationComplete();
+    } else if (!initialRotationComplete) {
+      if (introStartTimeRef.current === null) {
+        introStartTimeRef.current = clock.getElapsedTime();
+      }
+
+      const introElapsed = clock.getElapsedTime() - introStartTimeRef.current;
+      if (introElapsed >= 0.2) {
+        const frameFactor = delta * 60;
+        rotationYRef.current += introSpeedRef.current * frameFactor;
+        introSpeedRef.current *= Math.pow(0.96, frameFactor);
+        targetRotationYRef.current = rotationYRef.current;
+
+        if (introSpeedRef.current < 0.001) {
+          onInitialRotationComplete();
+        }
+      }
+    } else {
+      rotationYRef.current = THREE.MathUtils.lerp(
+        rotationYRef.current,
+        targetRotationYRef.current,
+        0.35,
+      );
+    }
+
+    panelsGroupRef.current.rotation.y = rotationYRef.current;
+  });
+
+  if (!navEnabled) {
+    return null;
+  }
+
+  return (
+    <group ref={panelsGroupRef}>
+      {icons.map((icon, i) => (
+        <MotionGroup
+          key={i}
+          initial={{ opacity: 0, scale: scalingConfig.iconScale, y: 1 }}
+          animate={{ opacity: 1, scale: scalingConfig.iconScale, y: 0 }}
+          transition={{
+            duration: 1.2,
+            delay: 0.5 + i * 0.15,
+            ease: [0.6, 0.01, 0.05, 0.95],
+          }}
+        >
+          <InteractivePanel
+            icon={icon}
+            setActive={setActive}
+            index={i}
+            position={panelPositions[i]}
+            orbitRotationYRef={rotationYRef}
+            onIconClick={() => handleIconClick(icon.id)}
+            onPanelPointerUp={onPanelPointerUp}
+            isParentVisible={isInView}
+            iconScale={scalingConfig.iconScale}
+            iconPlaneSize={scalingConfig.iconPlaneSize}
+            ringInner={scalingConfig.ringInner}
+            ringOuter={scalingConfig.ringOuter}
+            labelMargin={scalingConfig.labelMargin}
+          />
+        </MotionGroup>
+      ))}
+    </group>
+  );
+});
+
+const SceneContent = memo(function SceneContent({
+  eventSource,
+  nightSkyRef,
+  show3DNav,
+  initialRotationComplete,
+  hasDragged,
+  icons,
+  scalingConfig,
+  active,
+  setActive,
+  panelPositions,
+  handleIconClick,
+  onPanelPointerUp,
+  isInView,
+  constellationScales,
+  onInitialRotationComplete,
+  rotationYRef,
+  targetRotationYRef,
+  webglFailed,
+  onWebglFailure,
+}: {
+  eventSource: RefObject<HTMLElement>;
+  nightSkyRef: RefObject<NightSkyHandle>;
+  show3DNav: boolean;
+  initialRotationComplete: boolean;
+  hasDragged: boolean;
+  icons: PanelIcon[];
+  scalingConfig: ScalingConfig;
+  active: string | null;
+  setActive: (id: string | null) => void;
+  panelPositions: [number, number, number][];
+  handleIconClick: (id: string) => void;
+  onPanelPointerUp: () => void;
+  isInView: boolean;
+  constellationScales: ConstellationScales;
+  onInitialRotationComplete: () => void;
+  rotationYRef: MutableRefObject<number>;
+  targetRotationYRef: MutableRefObject<number>;
+  webglFailed: boolean;
+  onWebglFailure: () => void;
+}) {
+  const { t } = useTranslation();
+  const navEnabled = show3DNav && isInView;
+  const handleCanvasCreated = useContextLossHandler(onWebglFailure);
+
+  return (
+    <div id="home-3d" className="home-3d-content">
+      <NightSkyBackground ref={nightSkyRef} isVisible={isInView} />
+
+      {navEnabled && initialRotationComplete && !hasDragged && <DragHint isVisible={!hasDragged} />}
+
+      {webglFailed ? (
+        <img className="hub-fallback-hologram" src={hologramImage} alt="" aria-hidden="true" />
+      ) : (
+        <CanvasErrorBoundary onError={onWebglFailure}>
+          <Canvas
+            frameloop={isInView ? 'always' : 'never'}
+            camera={{ position: [0, 5, 20], fov: 45 }}
+            eventSource={eventSource as MutableRefObject<HTMLElement>}
+            eventPrefix="client"
+            className="webgl-canvas"
+            dpr={[1, 1.5]}
+            style={{ pointerEvents: navEnabled ? 'auto' : 'none' }}
+            onCreated={handleCanvasCreated}
+          >
+            <Suspense fallback={null}>
+              <group>
+                <Environment files={(suspend(sunsetHdri) as { default: string }).default} />
+
+                <RotatingPanels
+                  navEnabled={navEnabled}
+                  icons={icons}
+                  scalingConfig={scalingConfig}
+                  setActive={setActive}
+                  panelPositions={panelPositions}
+                  handleIconClick={handleIconClick}
+                  onPanelPointerUp={onPanelPointerUp}
+                  isInView={isInView}
+                  initialRotationComplete={initialRotationComplete}
+                  onInitialRotationComplete={onInitialRotationComplete}
+                  rotationYRef={rotationYRef}
+                  targetRotationYRef={targetRotationYRef}
+                />
+              </group>
+
+              <MotionGroup
+                initial={{ opacity: 0, scale: scalingConfig.hologramScale * 0.85, y: -0.5 }}
+                animate={{
+                  opacity: 1,
+                  scale: scalingConfig.hologramScale,
+                  y: scalingConfig.hologramY,
+                }}
+                transition={{
+                  duration: 1.5,
+                  delay: 1.2,
+                  ease: [0.6, 0.01, 0.05, 0.95],
+                }}
+              >
+                <CentralHologram
+                  scale={scalingConfig.hologramScale}
+                  radius={scalingConfig.hologramRadius}
+                  halo={scalingConfig.hologramHalo}
+                />
+              </MotionGroup>
+
+              {navEnabled && (
+                <>
+                  <OutlineStars
+                    active={active === 'About'}
+                    position={[-scalingConfig.radius + 1, 0, 0]}
+                    pointsData={catPoints}
+                    scale={constellationScales.about}
+                  />
+                  <OutlineStars
+                    active={active === 'Socials'}
+                    position={[-scalingConfig.radius - 3, -scalingConfig.radius * 0.6, 0]}
+                    pointsData={cameraPoints}
+                    scale={constellationScales.socials}
+                  />
+                  <OutlineStars
+                    active={active === 'Resume'}
+                    position={[-scalingConfig.radius - 2, scalingConfig.radius * 0.4, 0]}
+                    pointsData={bookPoints}
+                    scale={constellationScales.resume}
+                  />
+                  <OutlineStars
+                    active={active === 'Skills'}
+                    position={[scalingConfig.radius + 2, scalingConfig.radius * 0.4, 0]}
+                    pointsData={flowerPoints}
+                    scale={constellationScales.skills}
+                  />
+                  <OutlineStars
+                    active={active === 'Projects'}
+                    position={[scalingConfig.radius - 1, -scalingConfig.radius * 0.6, 0]}
+                    pointsData={headsetPoints}
+                    scale={constellationScales.projects}
+                  />
+                </>
+              )}
+
+              <Preload all />
+            </Suspense>
+          </Canvas>
+        </CanvasErrorBoundary>
+      )}
+
+      {!show3DNav && (
+        <motion.nav
+          className="static-menu-overlay mobile-home-layout"
+          aria-label={t('a11y.sections_nav')}
+          initial={{ opacity: 0, y: 50 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.5, duration: 0.8 }}
+        >
+          <div className="menu-grid">
+            {icons.map((icon) => (
+              <button
+                key={icon.id}
+                className="menu-item"
+                onClick={() => handleIconClick(icon.id)}
+                style={{ '--item-color': `#${icon.color.getHexString()}` } as CSSProperties}
+              >
+                <div className="icon-wrapper">
+                  {/* decorative: the label below already names the button */}
+                  <img src={icon.png} alt="" decoding="async" />
+                </div>
+                <span className="label" style={{ userSelect: 'none' }}>
+                  {icon.label}
+                </span>
+              </button>
+            ))}
+          </div>
+        </motion.nav>
+      )}
+
+      {show3DNav && (
+        // The 3D icons live in a WebGL canvas, which keyboards and screen readers can't reach.
+        // This menu offers the same five destinations; it stays hidden until it gets focus.
+        <nav className="hub-keyboard-nav" aria-label={t('a11y.sections_nav')}>
+          {icons.map((icon) => (
+            <button key={icon.id} type="button" onClick={() => handleIconClick(icon.id)}>
+              {icon.label}
+            </button>
+          ))}
+        </nav>
+      )}
+    </div>
+  );
+});
+
+// Lets other pages link straight to a section, e.g. /home#about-section. The sections are
+// lazy-loaded, so wait (up to a few seconds) for the target to exist before scrolling to it.
+const useScrollToHash = () => {
+  const { hash } = useLocation();
+
+  useEffect(() => {
+    const id = decodeURIComponent(hash.replace(/^#/, ''));
+    if (!id) return undefined;
+
+    let frame = 0;
+    const startedAt = performance.now();
+    const tryScroll = () => {
+      const target = document.getElementById(id);
+      if (target) {
+        scrollToSection(target);
+      } else if (performance.now() - startedAt < 5000) {
+        frame = requestAnimationFrame(tryScroll);
+      }
+    };
+    frame = requestAnimationFrame(tryScroll);
+
+    return () => cancelAnimationFrame(frame);
+  }, [hash]);
+};
+
+const Home = () => {
+  const { t } = useTranslation();
+  useScrollToHash();
+
+  const nightSkyRef = useRef<NightSkyHandle>(null);
+
+  const icons: PanelIcon[] = useMemo(
+    () => [
+      {
+        id: 'Socials',
+        label: t('nav.socials'),
+        png: socialsPng,
+        video: socialsVideo,
+        color: new THREE.Color(0.4, 0.7, 0.9),
+      },
+      {
+        id: 'Resume',
+        label: t('nav.resume'),
+        png: resumePng,
+        video: resumeVideo,
+        color: new THREE.Color(0.9, 0.6, 0.4),
+      },
+      {
+        id: 'Projects',
+        label: t('nav.projects'),
+        png: codePng,
+        video: codeVideo,
+        color: new THREE.Color(0.4, 0.8, 0.6),
+      },
+      {
+        id: 'About',
+        label: t('nav.about'),
+        png: avatarPng,
+        video: avatarVideo,
+        color: new THREE.Color(0.8, 0.5, 0.9),
+      },
+      {
+        id: 'Skills',
+        label: t('nav.skills'),
+        png: skillPng,
+        video: skillVideo,
+        color: new THREE.Color(0.7, 0.5, 0.9),
+      },
+    ],
+    [t],
+  );
+
+  const [active, setActive] = useState<string | null>(null);
+  const homeRef = useRef<HTMLElement>(null);
+  const rotationYRef = useRef(0);
+  const targetRotationYRef = useRef(0);
+
+  const [dimensions, setDimensions] = useState({
+    width: window.innerWidth,
+    height: window.innerHeight,
+  });
+  useEffect(() => {
+    let resizeTimeout: ReturnType<typeof setTimeout> | undefined;
+
+    const handleResize = () => {
+      clearTimeout(resizeTimeout);
+      resizeTimeout = setTimeout(() => {
+        setDimensions({ width: window.innerWidth, height: window.innerHeight });
+      }, 100);
+    };
+
+    window.addEventListener('resize', handleResize);
+
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      clearTimeout(resizeTimeout);
+    };
+  }, []);
+
+  const [isDragCapable, setIsDragCapable] = useState(() => {
+    if (typeof window !== 'undefined' && window.matchMedia) {
+      return window.matchMedia('(pointer: fine) and (hover: hover)').matches;
+    }
+    return false;
+  });
+
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.matchMedia) {
+      const mq = window.matchMedia('(pointer: fine) and (hover: hover)');
+      const update = () => setIsDragCapable(mq.matches);
+      mq.addEventListener('change', update);
+      update();
+      return () => mq.removeEventListener('change', update);
+    }
+  }, []);
+
+  // Without WebGL (unsupported, crashed or lost context) the hub switches to the static menu.
+  const [webglFailed, setWebglFailed] = useState(() => !isWebGLAvailable());
+  const handleWebglFailure = useCallback(() => setWebglFailed(true), []);
+
+  const isDesktop = dimensions.width >= 1024;
+  const isTablet = !isDesktop && dimensions.width < 1024 && dimensions.width >= 600;
+  const show3DNav = isDesktop && isDragCapable && !webglFailed;
+
+  const scalingConfig: ScalingConfig = useMemo(() => {
+    if (isDesktop) {
+      return {
+        radius: 10,
+        iconScale: 0.7,
+        iconPlaneSize: 1.6,
+        ringInner: 0.9,
+        ringOuter: 1.0,
+        labelMargin: 70,
+        hologramScale: 1,
+        hologramRadius: 5,
+        hologramHalo: [5.2, 5.4],
+        hologramY: 0,
+      };
+    } else if (isTablet) {
+      return {
+        radius: 7.5,
+        iconScale: 0.55,
+        iconPlaneSize: 1.2,
+        ringInner: 0.7,
+        ringOuter: 0.8,
+        labelMargin: 48,
+        hologramScale: 0.9,
+        hologramRadius: 4.5,
+        hologramHalo: [4.7, 4.9],
+        hologramY: 0.5,
+      };
+    } else {
+      return {
+        radius: 5.2,
+        iconScale: 0.42,
+        iconPlaneSize: 0.95,
+        ringInner: 0.55,
+        ringOuter: 0.65,
+        labelMargin: 32,
+        hologramScale: 1.2,
+        hologramRadius: 4.0,
+        hologramHalo: [4.2, 4.4],
+        hologramY: 0.4,
+      };
+    }
+  }, [isDesktop, isTablet]);
+
+  const isInView = useInView(homeRef, { amount: 1 });
+
+  useEffect(() => {
+    if (!isInView) {
+      setActive(null);
+    }
+  }, [isInView]);
+
+  const numberOfIcons = icons.length;
+
+  const dragRef = useRef({
+    dragging: false,
+    startX: 0,
+    startY: 0,
+    startRot: 0,
+    hasInteracted: false,
+    hasDraggedThisGesture: false,
+    clickedPanel: false,
+  });
+
+  const [initialRotationComplete, setInitialRotationComplete] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
+
+  const [hasDragged, setHasDragged] = useState(false);
+
+  const markInitialRotationComplete = useCallback(() => {
+    setInitialRotationComplete((prev) => (prev ? prev : true));
+  }, []);
+
+  const handleIconClick = useCallback((iconId: string) => {
+    const sectionMap: Record<string, string> = {
+      About: 'about-section',
+      Skills: 'skills-section',
+      Projects: 'projects-section',
+      Resume: 'resume-section',
+      Socials: 'socials-section',
+    };
+    scrollToSection(document.getElementById(sectionMap[iconId]));
+  }, []);
+
+  // Pointer events support mouse, pen and touch input; pointerup is handled globally so dragging can finish outside the canvas.
+  const markPanelPointerUp = useCallback(() => {
+    dragRef.current.clickedPanel = true;
+  }, []);
+
+  useEffect(() => {
+    const onPointerMove = (e: PointerEvent) => {
+      if (!dragRef.current.dragging || !initialRotationComplete || !show3DNav) return;
+
+      const deltaX = e.clientX - dragRef.current.startX;
+      const rotationSpeed = 0.003;
+
+      const centerY = window.innerHeight / 2;
+      const isFront = dragRef.current.startY > centerY;
+
+      const direction = isFront ? 1 : -1;
+
+      targetRotationYRef.current = dragRef.current.startRot + deltaX * rotationSpeed * direction;
+
+      if (!hasDragged && Math.abs(deltaX) > 5) {
+        setHasDragged(true);
+      }
+
+      if (Math.abs(deltaX) > 5) {
+        dragRef.current.hasDraggedThisGesture = true;
+      }
+    };
+
+    const onPointerUp = (e: PointerEvent) => {
+      if (dragRef.current.dragging) {
+        dragRef.current.hasInteracted = true;
+        if (!dragRef.current.hasDraggedThisGesture && !dragRef.current.clickedPanel) {
+          if (nightSkyRef.current) {
+            nightSkyRef.current.triggerShockwave(e.clientX, e.clientY);
+          }
+        }
+      }
+      dragRef.current.dragging = false;
+      dragRef.current.clickedPanel = false;
+      setIsDragging(false);
+    };
+
+    window.addEventListener('pointermove', onPointerMove);
+    window.addEventListener('pointerup', onPointerUp);
+    window.addEventListener('pointercancel', onPointerUp);
+
+    return () => {
+      window.removeEventListener('pointermove', onPointerMove);
+      window.removeEventListener('pointerup', onPointerUp);
+      window.removeEventListener('pointercancel', onPointerUp);
+    };
+  }, [initialRotationComplete, hasDragged, show3DNav]);
+
+  const panelPositions: [number, number, number][] = useMemo(
+    () =>
+      icons.map((_, i): [number, number, number] => {
+        const angle = (i / numberOfIcons) * 2 * Math.PI;
+        const x = scalingConfig.radius * Math.cos(angle);
+        const z = scalingConfig.radius * Math.sin(angle);
+        return [x, 0, z];
+      }),
+    [icons, numberOfIcons, scalingConfig.radius],
+  );
+
+  const constellationScales = useMemo(
+    () => ({
+      about: isDesktop ? 1.3 : 0.9,
+      socials: isDesktop ? 0.8 : 0.6,
+      resume: isDesktop ? 0.8 : 0.6,
+      skills: isDesktop ? 0.8 : 0.6,
+      projects: isDesktop ? 0.8 : 0.6,
+    }),
+    [isDesktop],
+  );
+
+  return (
+    <>
+      <div className="main-container">
+        <a className="skip-link" href="#main">
+          {t('a11y.skip_to_content')}
+        </a>
+        <header>
+          <LanguageSelector />
+          <MusicPlayer />
+        </header>
+
+        <main id="main" tabIndex={-1}>
+          <h1 className="sr-only">{t('a11y.home_heading')}</h1>
+
+          {/* oxlint-disable-next-line jsx-a11y/no-static-element-interactions -- drag-to-rotate is a pointer-only enhancement; every icon stays reachable via its own button/click handler */}
+          <section
+            ref={homeRef}
+            className="home-3d"
+            onPointerDown={
+              show3DNav && isInView
+                ? (e) => {
+                    if (!initialRotationComplete) return;
+                    dragRef.current.dragging = true;
+                    setIsDragging(true);
+                    dragRef.current.hasDraggedThisGesture = false;
+                    dragRef.current.clickedPanel = false;
+                    dragRef.current.startX = e.clientX;
+                    dragRef.current.startY = e.clientY;
+                    dragRef.current.startRot = targetRotationYRef.current;
+                  }
+                : undefined
+            }
+            style={{
+              cursor: show3DNav ? (isDragging ? 'grabbing' : 'grab') : 'default',
+              touchAction: show3DNav ? 'none' : 'auto',
+              userSelect: isDragging ? 'none' : 'auto',
+            }}
+          >
+            <SceneContent
+              eventSource={homeRef}
+              nightSkyRef={nightSkyRef}
+              show3DNav={show3DNav}
+              initialRotationComplete={initialRotationComplete}
+              hasDragged={hasDragged}
+              icons={icons}
+              scalingConfig={scalingConfig}
+              active={active}
+              setActive={setActive}
+              panelPositions={panelPositions}
+              handleIconClick={handleIconClick}
+              onPanelPointerUp={markPanelPointerUp}
+              isInView={isInView}
+              constellationScales={constellationScales}
+              onInitialRotationComplete={markInitialRotationComplete}
+              rotationYRef={rotationYRef}
+              targetRotationYRef={targetRotationYRef}
+              webglFailed={webglFailed}
+              onWebglFailure={handleWebglFailure}
+            />
+          </section>
+
+          <SectionsContainer />
+        </main>
+      </div>
+    </>
+  );
+};
+
+export default Home;
