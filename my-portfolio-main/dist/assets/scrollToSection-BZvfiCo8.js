@@ -1,0 +1,1 @@
+var e=()=>typeof window<`u`&&typeof window.matchMedia==`function`&&window.matchMedia(`(prefers-reduced-motion: reduce)`).matches,t=(t,{focus:n=!0}={})=>{t&&(t.scrollIntoView({behavior:e()?`auto`:`smooth`,block:`start`}),n&&(t.hasAttribute(`tabindex`)||t.setAttribute(`tabindex`,`-1`),t.focus({preventScroll:!0})))};export{t};
